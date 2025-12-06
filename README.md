@@ -1,1 +1,1 @@
-# otus_mginx_log_analizer
+# otus_nginx_log_analizer
