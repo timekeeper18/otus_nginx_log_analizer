@@ -9,15 +9,16 @@ config_default = {
 }
 
 
-def test_parse_valid_log_line():
+def test_parse_valid_log_line() -> None:
     """Тест парсинга нормальной строки лога"""
-    parser = NginxLogAnalyzer(config=config_default,
-                              log_format='extended')
+    parser = NginxLogAnalyzer(config=config_default, log_format="extended")
 
     # Пример строки из nginx лога
-    log_line = ('1.196.116.32 -  - [29/Jun/2017:03:50:22 +0300] "GET /api/v2/banner/25019354 HTTP/1.1" 200 927 '
-                '"-" "Lynx/2.8.8dev.9 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/2.10.5" "-" '
-                '"1498697422-2190034393-4708-9752759" "dc7161be3" 0.390')
+    log_line = (
+        '1.196.116.32 -  - [29/Jun/2017:03:50:22 +0300] "GET /api/v2/banner/25019354 HTTP/1.1" 200 927 '
+        '"-" "Lynx/2.8.8dev.9 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/2.10.5" "-" '
+        '"1498697422-2190034393-4708-9752759" "dc7161be3" 0.390'
+    )
 
     result = parser.parse_line(log_line)
 
@@ -29,12 +30,13 @@ def test_parse_valid_log_line():
     assert float(result["request_time"]) == 0.390
 
 
-def test_parse_invalid_log_line():
+def test_parse_invalid_log_line() -> None:
     """Тест парсинга битой строки"""
-    log_line = ('1.196.116.32 -  - [29/Jun/2017:03:50:22 +0300] "GET /api/v2/banner/25019354 HTTP/1.1" 200 927 "-" '
-                '"Lynx/2.8.8dev.9 libwww-FM/2.14 SSL-')
-    parser = NginxLogAnalyzer(config=config_default,
-                              log_format='extended')
+    log_line = (
+        '1.196.116.32 -  - [29/Jun/2017:03:50:22 +0300] "GET /api/v2/banner/25019354 HTTP/1.1" 200 927 "-" '
+        '"Lynx/2.8.8dev.9 libwww-FM/2.14 SSL-'
+    )
+    parser = NginxLogAnalyzer(config=config_default, log_format="extended")
 
     log_line = "Это не лог а какая-то ерунда"
 
@@ -44,10 +46,9 @@ def test_parse_invalid_log_line():
     assert result is None or result == {}
 
 
-def test_parse_line_with_missing_time():
+def test_parse_line_with_missing_time() -> None:
     """Тест строки без времени запроса"""
-    parser = NginxLogAnalyzer(config=config_default,
-                              log_format='extended')
+    parser = NginxLogAnalyzer(config=config_default, log_format="extended")
 
     # Строка без времени в конце
     log_line = '1.2.3.4 - - [29/Jun/2017:03:50:22 +0300] "GET /test HTTP/1.1" 200 123'
