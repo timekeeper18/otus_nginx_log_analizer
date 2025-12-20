@@ -304,9 +304,11 @@ class NginxLogAnalyzer:
                     time_sum=u_data.time_sum + line.get("request_time", 0.0),
                     time_perc=100 * (u_data.time_sum + line.get("request_time", 0.0)) / total_request_time,
                     time_avg=u_data.time_sum / (u_data.count + 1),
-                    time_max=line.get("request_time", 0.0)
-                    if line.get("request_time", 0.0) > u_data.time_max
-                    else u_data.time_max,
+                    time_max=(
+                        line.get("request_time", 0.0)
+                        if line.get("request_time", 0.0) > u_data.time_max
+                        else u_data.time_max
+                    ),
                     time_med=self.get_median(med[line.get("path", "")]),
                 ).__dict__
             else:

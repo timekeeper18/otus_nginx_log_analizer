@@ -16,7 +16,7 @@ class Stat:
         """Автоматически вызывается после инициализации"""
         self.round_floats()
 
-    def round_floats(self, precision: int = 2) -> 'Stat':
+    def round_floats(self, precision: int = 2) -> "Stat":
         """
         Округляет все float-поля до заданной точности
         precision: количество знаков после запятой (по умолчанию 3)
