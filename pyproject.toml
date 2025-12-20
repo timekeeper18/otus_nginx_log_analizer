@@ -16,6 +16,11 @@ ruff = "^0.14.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^7.0.0"
+pre-commit = "^4.5.1"
+black = "^25.12.0"
+isort = "^7.0.0"
+flake8 = "^7.3.0"
+mypy = "^1.19.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -36,6 +41,7 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 exclude = ["scripts", "docs", "test"]
 disable_error_code = ["name-defined"]
+explicit_package_bases = true
 
 [tool.ruff]  # альтернатива flake8
 target-version = "py312"

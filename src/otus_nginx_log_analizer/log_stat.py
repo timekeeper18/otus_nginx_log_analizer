@@ -2,11 +2,11 @@ import gzip
 import json
 import os
 import re
-from datetime import datetime, date
+from datetime import date, datetime
 from os import DirEntry
 from pathlib import Path
 from string import Template
-from typing import List, Dict, Optional, Generator, Any
+from typing import Any, Dict, Generator, List, Optional
 
 from src.otus_nginx_log_analizer.logger import setup_logging
 from src.otus_nginx_log_analizer.models import Stat
@@ -23,19 +23,19 @@ class NginxLogAnalyzer:
 
     # Регулярные выражения для парсинга логов
     LOG_FORMATS = {
-        'extended': r'(?P<ip>\S+) (?P<client_id>\S+) (?P<user>\S+) \[(?P<time>[^\]]+)\] "(?P<method>\S+) '
-                    r'(?P<path>\S+) (?P<protocol>\S+)" (?P<status>\d+) (?P<size>\S+) "(?P<referrer>[^"]*)" '
-                    r'"(?P<agent>[^"]*)" "(?P<forwarded_for>[^"]*)" "(?P<request_id>[^"]*)" '
-                    r'"(?P<upstream_cache_status>[^"]*)" (?P<request_time>\S+)'
+        "extended": r'(?P<ip>\S+) (?P<client_id>\S+) (?P<user>\S+) \[(?P<time>[^\]]+)\] "(?P<method>\S+) '
+        r'(?P<path>\S+) (?P<protocol>\S+)" (?P<status>\d+) (?P<size>\S+) "(?P<referrer>[^"]*)" '
+        r'"(?P<agent>[^"]*)" "(?P<forwarded_for>[^"]*)" "(?P<request_id>[^"]*)" '
+        r'"(?P<upstream_cache_status>[^"]*)" (?P<request_time>\S+)'
     }
 
     DATE_FORMAT = {
-        'base': '%Y%m%d',
+        "base": "%Y%m%d",
     }
 
-    UI_NAME_PATTERN = r'nginx-access-ui\.log-\d{8}\.gz$'
+    UI_NAME_PATTERN = r"nginx-access-ui\.log-\d{8}\.gz$"
 
-    def __init__(self, config: dict, log_format: str | None = 'extended'):
+    def __init__(self, config: dict, log_format: str | None = "extended"):
         """
         Инициализация анализатора логов.
 
@@ -53,23 +53,23 @@ class NginxLogAnalyzer:
 
         # Обрабатываем входной путь
 
-        if config.get('REPORT_DIR', '').startswith('./'):
-            self.template_dir = base_path / str(config.get('REPORT_DIR'))[2:]
-            self.__report_dir = base_path / str(config.get('REPORT_DIR'))[2:]
+        if config.get("REPORT_DIR", "").startswith("./"):
+            self.template_dir = base_path / str(config.get("REPORT_DIR"))[2:]
+            self.__report_dir = base_path / str(config.get("REPORT_DIR"))[2:]
         else:
-            self.template_dir = Path(str(config.get('REPORT_DIR')))
-            self.__report_dir = Path(str(config.get('REPORT_DIR')))
-        if config.get('LOG_DIR', '').startswith('./'):
-            self.__log_dir = base_path / str(config.get('LOG_DIR'))[2:]
+            self.template_dir = Path(str(config.get("REPORT_DIR")))
+            self.__report_dir = Path(str(config.get("REPORT_DIR")))
+        if config.get("LOG_DIR", "").startswith("./"):
+            self.__log_dir = base_path / str(config.get("LOG_DIR"))[2:]
         else:
-            self.__log_dir = Path(str(config.get('LOG_DIR')))
+            self.__log_dir = Path(str(config.get("LOG_DIR")))
 
         self.log_format = log_format
 
         self.pattern = re.compile(self.LOG_FORMATS[log_format])
         self.pattern_ui_log = re.compile(self.UI_NAME_PATTERN)
         self.entries = list[Any]
-        self.__report_size = config.get('REPORT_SIZE')
+        self.__report_size = config.get("REPORT_SIZE")
 
     @staticmethod
     def __is_valid_gzip(filepath: DirEntry) -> bool:
@@ -80,7 +80,7 @@ class NginxLogAnalyzer:
         :return: Истина, в случае если это архив и Ложь - в противном случае
         """
         try:
-            with gzip.open(filepath, 'rb') as f:
+            with gzip.open(filepath, "rb") as f:
                 # Пробуем прочитать немного данных
                 f.read(1)
                 return True
@@ -102,17 +102,15 @@ class NginxLogAnalyzer:
         try:
             n_ = os.path.basename(f_name)
             _ = os.path.splitext(f_name.name)
-            _name, f_extension = os.path.splitext(f_name.name) \
-                if self.__is_valid_gzip(filepath=f_name) else [n_, None]
-            f_date = _name.split('-')[-1]
-            f_date = datetime.strptime(f_date, self.DATE_FORMAT['base'])
+            _name, f_extension = os.path.splitext(f_name.name) if self.__is_valid_gzip(filepath=f_name) else [n_, None]
+            f_date = _name.split("-")[-1]
+            f_date = datetime.strptime(f_date, self.DATE_FORMAT["base"])
         except Exception as exc:
             log.error(exc)
             f_date = None
         return f_date
 
-    def report_render(self, report_template: str = 'report.html',
-                      table_json: list[dict] | None = None) -> str | None:
+    def report_render(self, report_template: str = "report.html", table_json: list[dict] | None = None) -> str | None:
         """
         Создание файла с отчетом.
 
@@ -126,22 +124,23 @@ class NginxLogAnalyzer:
         assert os.path.isfile(full_path), f"Файл не найден: {full_path}"
         assert table_json, f"{self.__log_dir} Статистика не посчитана"
         try:
-            with open(os.path.join(self.template_dir, report_template), mode='r', encoding='utf-8') as f:
+            with open(os.path.join(self.template_dir, report_template), mode="r", encoding="utf-8") as f:
                 template_str = f.read()
 
             # Создаем шаблок из прочитанной строки (файла)
             template = Template(template_str)
             # заменяем через json.dumps, чтобы исключить запрещенные символы для js
             js_code = template.safe_substitute(table_json=json.dumps(table_json))
-            report_file = os.path.join(self.__report_dir, f'report-{datetime.strftime(self.log_date,
-                                                                                      '%Y.%m.%d')}.html')
-            report_name = os.path.join(self.template_dir, report_file)
-            with open(report_name, mode='w', encoding='utf-8') as f:
+            jp = os.path.join(self.__report_dir)
+            repo_date_str = datetime.strftime(self.log_date, "%Y.%m.%d")
+            report_file = f"report-{repo_date_str}.html"
+            report_name = os.path.join(str(jp), str(report_file))
+            with open(report_name, mode="w", encoding="utf-8") as f:
                 f.write(js_code)
         except Exception as exc:
             log.error(exc)
             return None
-        return report_name
+        return str(report_name) if report_file else None
 
     def get_most_recent_log(self) -> str | None:
         """
@@ -174,7 +173,7 @@ class NginxLogAnalyzer:
             return None
 
         # Удаляем начальные и конечные пробелы, заменяем двойные пробелы
-        line = re.sub(r'\s+', ' ', line)
+        line = re.sub(r"\s+", " ", line)
 
         # Пробуем парсить в зависимости от формата
         match = self.pattern.match(line)
@@ -184,27 +183,19 @@ class NginxLogAnalyzer:
 
         # Преобразование типов
         try:
-            entry['status'] = int(entry['status'])
-            entry['size'] = int(entry['size']) if entry['size'] != '-' else 0
+            entry["status"] = int(entry["status"])
+            entry["size"] = int(entry["size"]) if entry["size"] != "-" else 0
 
             # Для extended формата парсим время запроса
-            if 'request_time' in entry:
+            if "request_time" in entry:
                 try:
-                    entry['request_time'] = float(entry['request_time'])
+                    entry["request_time"] = float(entry["request_time"])
                 except (ValueError, TypeError):
-                    entry['request_time'] = 0.0
+                    entry["request_time"] = 0.0
 
             # Парсинг времени
-            time_str = entry['time'].split()[0]  # Берем только дату без смещения часового пояса
-            try:
-                entry['time'] = datetime.strptime(time_str, '%d/%b/%Y:%H:%M:%S')
-            except ValueError:
-                # Пробуем альтернативные форматы
-                try:
-                    entry['time'] = datetime.strptime(time_str, '%Y-%m-%d:%H:%M:%S')
-                except ValueError:
-                    log.error(f"Неизвестный формат времени: {time_str}")
-                    return None
+            time_str = entry["time"].split()[0]  # Берем только дату без смещения часового пояса
+            entry["time"] = datetime.strptime(time_str, "%d/%b/%Y:%H:%M:%S")
 
         except (ValueError, KeyError) as e:
             log.error(f"Ошибка парсинга строки: {line[:100]}...")
@@ -213,7 +204,7 @@ class NginxLogAnalyzer:
 
         return entry
 
-    def read_logs(self, file_: str, encoding: str = 'utf-8') -> Generator[dict, None, None]:
+    def read_logs(self, file_: str, encoding: str = "utf-8") -> Generator[dict, None, None]:
         """
         Чтение логов из файла с использованием генератора.
 
@@ -224,20 +215,18 @@ class NginxLogAnalyzer:
         """
         filepath = os.path.join(self.__log_dir, file_)
         # Проверяем, является ли файл gzip
-        is_gzip = filepath.endswith('.gz')
-        open_func = gzip.open if is_gzip else open
-        mode = 'rt' if is_gzip else 'r'
-
+        is_gzip = filepath.endswith(".gz")
+        mode = "rt" if is_gzip else "r"
         log.info(f"Чтение файла: {filepath} (формат: {self.log_format})")
 
         try:
-            with open_func(filepath, mode, encoding=encoding) as f:
+            with gzip.open(filepath, mode) as f:
                 lines_read = 0
                 successful = 0
 
                 for line_num, line in enumerate(f, 1):
                     lines_read += 1
-                    entry = self.parse_line(line) if line else None
+                    entry = self.parse_line(str(line)) if line else None
                     if entry:
                         successful += 1
                         yield entry
@@ -251,9 +240,9 @@ class NginxLogAnalyzer:
         except UnicodeDecodeError:
             log.warning("Ошибка выбора кодировки файла при чтении")
             # Пробуем другую кодировку
-            if encoding != 'latin-1':
+            if encoding != "latin-1":
                 # Для рекурсивного вызова тоже нужно вернуть генератор
-                yield from self.read_logs(file_=file_, encoding='latin-1')
+                yield from self.read_logs(file_=file_, encoding="latin-1")
         except Exception as e:
             log.error(f"Ошибка при чтении файла {filepath}: {e}")
 
@@ -283,7 +272,8 @@ class NginxLogAnalyzer:
         count - сколько раз встречается URL, абсолютное значение
         count_perc - сколько раз встречается URL, в процентнах относительно общего числа запросов
         time_sum - суммарный $request_time для данного URL’а, абсолютное значение
-        time_perc - суммарный $request_time для данного URL’а, в процентах относительно общего $request_time всех запросов
+        time_perc - суммарный $request_time для данного URL’а,
+                    в процентах относительно общего $request_time всех запросов
         time_avg - средний $request_time для данного URL’а
         time_max - максимальный $request_time для данного URL’а
         time_med - медиана $request_time для данного URL’а
@@ -298,41 +288,42 @@ class NginxLogAnalyzer:
             return []
         for line in self.read_logs(file_=file_):
             lines += 1
-            total_request_time += line.get('request_time', 0)
-            if u_data := url_stat.get(line.get('path')):
+            total_request_time += line.get("request_time", 0)
+            if u_data := url_stat.get(line.get("path")):
                 # Запоминаем данные для подсчета медианы
-                if med[line.get('path')] is None:
-                    med[line.get('path')] = [line.get('path')]
+                if med[line.get("path")] is None:
+                    med[line.get("path")] = [line.get("path")]
                 else:
-                    med[line.get('path')].append(line.get('request_time'))
+                    med[line.get("path")].append(line.get("request_time"))
                 u_data = Stat(**u_data)
 
-                url_stat[line.get('path')] = Stat(url=line.get('path', ''),
-                                                  count=u_data.count + 1,
-                                                  count_perc=100 * (u_data.count + 1) / lines,
-                                                  time_sum=u_data.time_sum + line.get('request_time', 0.0),
-                                                  time_perc=100 * (u_data.time_sum + line.get(
-                                                      'request_time', 0.0)) / total_request_time,
-                                                  time_avg=u_data.time_sum / (u_data.count + 1),
-                                                  time_max=line.get('request_time', 0.0)
-                                                  if line.get(
-                                                      'request_time', 0.0) > u_data.time_max else u_data.time_max,
-                                                  time_med=self.get_median(med[line.get('path', '')])).__dict__
+                url_stat[line.get("path")] = Stat(
+                    url=line.get("path", ""),
+                    count=u_data.count + 1,
+                    count_perc=100 * (u_data.count + 1) / lines,
+                    time_sum=u_data.time_sum + line.get("request_time", 0.0),
+                    time_perc=100 * (u_data.time_sum + line.get("request_time", 0.0)) / total_request_time,
+                    time_avg=u_data.time_sum / (u_data.count + 1),
+                    time_max=line.get("request_time", 0.0)
+                    if line.get("request_time", 0.0) > u_data.time_max
+                    else u_data.time_max,
+                    time_med=self.get_median(med[line.get("path", "")]),
+                ).__dict__
             else:
-                if line.get('path'):
+                if line.get("path"):
                     # Запоминаем данные для подсчета медианы
-                    med[line.get('path', '')] = [line.get('request_time', 0.0)]
-                    url_stat[line.get('path', '')] = Stat(url=line.get('path', ''),
-                                                          count=1,
-                                                          count_perc=100 / lines,
-                                                          time_sum=line.get('request_time', 0.0),
-                                                          time_perc=100 * line.get('request_time',
-                                                                                   0) / total_request_time,
-                                                          time_avg=line.get('request_time', 0.0),
-                                                          time_max=line.get('request_time', 0.0),
-                                                          time_med=line.get('request_time', 0.0)
-                                                          ).__dict__
-        return sorted(list(url_stat.values()), key=lambda x: x['time_sum'], reverse=True)[:self.__report_size]
+                    med[line.get("path", "")] = [line.get("request_time", 0.0)]
+                    url_stat[line.get("path", "")] = Stat(
+                        url=line.get("path", ""),
+                        count=1,
+                        count_perc=100 / lines,
+                        time_sum=line.get("request_time", 0.0),
+                        time_perc=100 * line.get("request_time", 0) / total_request_time,
+                        time_avg=line.get("request_time", 0.0),
+                        time_max=line.get("request_time", 0.0),
+                        time_med=line.get("request_time", 0.0),
+                    ).__dict__
+        return sorted(list(url_stat.values()), key=lambda x: x["time_sum"], reverse=True)[: self.__report_size]
 
 
 # Тестирование с вашим форматом логов
@@ -340,13 +331,12 @@ if __name__ == "__main__":
     config = {
         "REPORT_SIZE": 200,
         "REPORT_DIR": "/home/akhmadiev/PycharmProjects/otus_nginx_log_analizer/report",
-        "LOG_DIR": "/home/akhmadiev/PycharmProjects/otus_nginx_log_analizer/data"
+        "LOG_DIR": "/home/akhmadiev/PycharmProjects/otus_nginx_log_analizer/data",
     }
     log.info("=== Тестирование парсера для расширенного формата nginx ===")
 
     # Создаем анализатор для extended формата
-    analyzer = NginxLogAnalyzer(config=config,
-                                log_format='extended')
+    analyzer = NginxLogAnalyzer(config=config, log_format="extended")
     file_ = analyzer.get_most_recent_log()
     v = analyzer.get_statistics(file_=file_)
     log.info(v[:])

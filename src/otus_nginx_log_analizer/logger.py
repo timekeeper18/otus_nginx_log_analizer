@@ -1,14 +1,10 @@
 import logging
-from typing import Any, Optional
-from typing import cast
+from typing import Any, Optional, cast
 
 import structlog
 
 
-def setup_logging(
-        log_file: Optional[str] = None,
-        log_level: str = "INFO"
-) -> Any:
+def setup_logging(log_file: Optional[str] = None, log_level: str = "INFO") -> Any:
     """
     Настройка логирования с записью в файл и консоль
     """
@@ -22,16 +18,12 @@ def setup_logging(
 
     # Обработчик для файла (если указан)
     if log_file:
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setLevel(log_level)
         handlers.append(cast(logging.StreamHandler, file_handler))
 
     # Настраиваем базовый logging
-    logging.basicConfig(
-        format="%(message)s",
-        level=log_level,
-        handlers=handlers
-    )
+    logging.basicConfig(format="%(message)s", level=log_level, handlers=handlers)
 
     # Процессоры structlog
     timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
