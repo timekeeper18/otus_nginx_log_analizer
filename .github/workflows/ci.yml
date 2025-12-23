@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"] # Укажите нужные версии Python
+        python-version: ["3.12"] # Укажите нужные версии Python
 
     steps:
       - name: Checkout repository
