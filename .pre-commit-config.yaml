@@ -3,8 +3,11 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-yaml
+        exclude: ^(docs/|tests/|temp/|report/)
       - id: end-of-file-fixer
+        exclude: ^(docs/|tests/|temp/|report/)
       - id: trailing-whitespace
+        exclude: ^(docs/|tests/|temp/|report/)
       - id: check-added-large-files
 
   - repo: https://github.com/psf/black
@@ -24,13 +27,10 @@ repos:
     hooks:
       - id: flake8
 
-  # Это блок для mypy. Убедитесь, что у вас ЕСТЬ ключ 'hooks:' с отступом
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0  # Или более новая версия, например v1.11.1
-    hooks:       # <-- Этот ключ ОБЯЗАТЕЛЬНО должен быть!
+    rev: v1.8.0
+    hooks:
       - id: mypy
-        # Укажите здесь аргументы для mypy и дополнительные зависимости
         args: [--ignore-missing-imports, --explicit-package-bases]
-        # Если нужны дополнительные пакеты типов, перечислите их здесь
         additional_dependencies:
           - "types-PyYAML"
